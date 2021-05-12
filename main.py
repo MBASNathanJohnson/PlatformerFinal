@@ -1,12 +1,11 @@
 import arcade
 
 # Constants
-SCREEN_WIDTH = 1000
+SCREEN_WIDTH = 1200
 SCREEN_HEIGHT = 650
-SCREEN_TITLE = "Platformer"
-
+SCREEN_TITLE = "Slime Adventure"
 # Constants used to scale our sprites from their original size
-CHARACTER_SCALING = 1
+CHARACTER_SCALING = 0.5
 TILE_SCALING = 0.5
 COIN_SCALING = 0.5
 SPRITE_PIXEL_SIZE = 128
@@ -65,7 +64,7 @@ class MyGame(arcade.Window):
         self.coin_list = arcade.SpriteList()
 
         # Set up the player, specifically placing it at these coordinates.
-        image_source = ":resources:images/animated_characters/female_adventurer/femaleAdventurer_idle.png"
+        image_source = "player.png"
         self.player_sprite = arcade.Sprite(image_source, CHARACTER_SCALING)
         self.player_sprite.center_x = 128
         self.player_sprite.center_y = 128
@@ -74,7 +73,7 @@ class MyGame(arcade.Window):
         # --- Load in a map from the tiled editor ---
 
         # Name of map file to load
-        map_name = ":resources:tmx_maps/map.tmx"
+        map_name = "map.tmx"
         # Name of the layer in the file that has our platforms/walls
         platforms_layer_name = 'Platforms'
 
@@ -86,7 +85,6 @@ class MyGame(arcade.Window):
                                                       layer_name=platforms_layer_name,
                                                       scaling=TILE_SCALING,
                                                       use_spatial_hash=True)
-
 
         # --- Other stuff
         # Set the background color
