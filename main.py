@@ -16,7 +16,7 @@ SPRITE_PIXEL_SIZE = 128
 GRID_PIXEL_SIZE = (SPRITE_PIXEL_SIZE * TILE_SCALING)
 
 # Movement speed of player, in pixels per frame
-PLAYER_MOVEMENT_SPEED = 10
+PLAYER_MOVEMENT_SPEED = 15
 GRAVITY = 1
 PLAYER_JUMP_SPEED = 20
 
@@ -29,6 +29,9 @@ TOP_VIEWPORT_MARGIN = 100
 
 PLAYER_START_X = 64
 PLAYER_START_Y = 225
+
+#levels
+level = 1
 
 class InstructionView(arcade.View):
     def on_show(self):
@@ -60,7 +63,7 @@ class InstructionView(arcade.View):
     def on_mouse_press(self, _x, _y, _button, _modifiers):
         """ If the user presses the mouse button, start the game. """
         game_view = GameView()
-        game_view.setup()
+        game_view.setup(level)
         self.window.show_view(game_view)
 
 class GameView(arcade.View):
@@ -75,11 +78,13 @@ class GameView(arcade.View):
 
         # These are 'lists' that keep track of our sprites. Each sprite should
         # go into a list.
+        self.flags_list = None
         self.coin_list = None
         self.wall_list = None
         self.foreground_list = None
         self.background_list = None
         self.player_list = None
+
 
         # Separate variable that holds the player sprite
         self.player_sprite = None
@@ -93,10 +98,9 @@ class GameView(arcade.View):
 
         # Keep track of the score
         self.score = 0
+        self.level = 1
 
-        # Where is the right edge of the map?
-        self.end_of_map = 0
-
+        self.upheld = False
 
 
         # Load sounds
@@ -104,10 +108,10 @@ class GameView(arcade.View):
         self.jump_sound = arcade.load_sound(":resources:sounds/jump1.wav")
         self.game_over = arcade.load_sound(":resources:sounds/gameover1.wav")
 
-    def setup(self):
+    def setup(self, level):
         """ Set up the game here. Call this function to restart the game. """
 
-        self.background = arcade.load_texture("background.jpg")
+        self.background = arcade.load_texture("backgroundold.jpg")
 
         # Used to keep track of our scrolling
         self.view_bottom = 0
@@ -121,6 +125,7 @@ class GameView(arcade.View):
         self.foreground_list = arcade.SpriteList()
         self.background_list = arcade.SpriteList()
         self.wall_list = arcade.SpriteList()
+        self.flags_list = arcade.SpriteList()
         self.coin_list = arcade.SpriteList()
 
         # Set up the player, specifically placing it at these coordinates.
@@ -141,14 +146,14 @@ class GameView(arcade.View):
         # Name of the layer that has items for background
         background_layer_name = 'Background'
 
+        flags_layer_name = 'Flags'
+
         # Map name
-        map_name = "map_1.tmx"
+        map_name = f"map_{level}.tmx"
 
         # Read in the tiled map
         my_map = arcade.tilemap.read_tmx(map_name)
 
-        # Calculate the right edge of the my_map in pixels
-        self.end_of_map = my_map.map_size.width * GRID_PIXEL_SIZE
 
         # -- Background
         self.background_list = arcade.tilemap.process_layer(my_map,
@@ -160,7 +165,9 @@ class GameView(arcade.View):
                                                             foreground_layer_name,
                                                             TILE_SCALING)
 
-        # -- Platforms
+        self.flags_list = arcade.tilemap.process_layer(my_map, flags_layer_name , TILE_SCALING)
+
+        # -- PlatformsCoins
         self.wall_list = arcade.tilemap.process_layer(map_object=my_map,
                                                       layer_name=platforms_layer_name,
                                                       scaling=TILE_SCALING,
@@ -199,16 +206,14 @@ class GameView(arcade.View):
         self.wall_list.draw()
         self.coin_list.draw()
         self.player_list.draw()
+        self.flags_list.draw()
         self.foreground_list.draw()
-
 
     def on_key_press(self, key, modifiers):
         """Called whenever a key is pressed. """
 
         if key == arcade.key.UP or key == arcade.key.W:
-            if self.physics_engine.can_jump():
-                self.player_sprite.change_y = PLAYER_JUMP_SPEED
-                arcade.play_sound(self.jump_sound)
+            self.upheld = True
         elif key == arcade.key.LEFT or key == arcade.key.A:
             self.player_sprite.change_x = -PLAYER_MOVEMENT_SPEED
         elif key == arcade.key.RIGHT or key == arcade.key.D:
@@ -221,9 +226,13 @@ class GameView(arcade.View):
             self.player_sprite.change_x = 0
         elif key == arcade.key.RIGHT or key == arcade.key.D:
             self.player_sprite.change_x = 0
+        elif key == arcade.key.UP or key == arcade.key.W:
+            self.upheld = False
 
     def update(self, delta_time):
         """ Movement and game logic """
+
+
 
         # Move the player with the physics engine
         self.physics_engine.update()
@@ -231,6 +240,12 @@ class GameView(arcade.View):
         # See if we hit any coins
         coin_hit_list = arcade.check_for_collision_with_list(self.player_sprite,
                                                              self.coin_list)
+        flags_hit_list = arcade.check_for_collision_with_list(self.player_sprite,
+                                                             self.flags_list)
+
+        if self.physics_engine.can_jump() and self.upheld == True:
+            self.player_sprite.change_y = PLAYER_JUMP_SPEED
+            arcade.play_sound(self.jump_sound)
 
         # Loop through each coin we hit (if any) and remove it
         for coin in coin_hit_list:
@@ -240,6 +255,13 @@ class GameView(arcade.View):
             arcade.play_sound(self.collect_coin_sound)
             # Add one to the score
             self.score += 1
+
+        for flags in flags_hit_list:
+            flags.remove_from_sprite_lists()
+            self.level = self.level + 1
+            self.setup(self.level)
+            print(self.level)
+
 
         # Track if we need to change the viewport
         changed_viewport = False
