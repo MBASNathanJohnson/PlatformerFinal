@@ -2,6 +2,7 @@
 Slime Adventure Game
 """
 import arcade
+from tkinter import messagebox
 
 # Constants
 SCREEN_WIDTH = 1000
@@ -219,6 +220,11 @@ class GameView(arcade.View):
         elif key == arcade.key.RIGHT or key == arcade.key.D:
             self.player_sprite.change_x = PLAYER_MOVEMENT_SPEED
 
+         # Cheats
+        if key == arcade.key.KEY_6:
+            self.level = self.level + 1
+            self.setup(self.level)
+
     def on_key_release(self, key, modifiers):
         """Called when the user releases a key. """
 
@@ -236,6 +242,7 @@ class GameView(arcade.View):
 
         # Move the player with the physics engine
         self.physics_engine.update()
+
 
         # See if we hit any coins
         coin_hit_list = arcade.check_for_collision_with_list(self.player_sprite,
@@ -255,14 +262,32 @@ class GameView(arcade.View):
             arcade.play_sound(self.collect_coin_sound)
             # Add one to the score
             self.score += 1
+            print(self.score)
 
         for flags in flags_hit_list:
             flags.remove_from_sprite_lists()
-            self.level = self.level + 1
-            self.setup(self.level)
+            try:
+                self.level = self.level + 1
+                self.setup(self.level)
+            except:
+                #FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX PLEASE
+                response = messagebox.askquestion("Game Over", "Thanks for Playing, Would you like to restart?" )
+                if response == 'yes':
+                    self.level = 1
+                    self.setup(self.level)
+                if response == 'no':
+                    exit()
+                else:
+                    print("Error")
+
             print(self.level)
-
-
+            if self.level == 3:
+                self.background = arcade.load_texture("backgroundcave.jpg")
+                arcade.draw_lrwh_rectangle_textured(self.view_left, self.view_bottom,
+                                                    SCREEN_WIDTH, SCREEN_HEIGHT,
+                                                    self.background)
+            else:
+                print("your mum")
         # Track if we need to change the viewport
         changed_viewport = False
 
