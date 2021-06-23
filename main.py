@@ -17,7 +17,7 @@ SPRITE_PIXEL_SIZE = 128
 GRID_PIXEL_SIZE = (SPRITE_PIXEL_SIZE * TILE_SCALING)
 
 # Movement speed of player, in pixels per frame
-PLAYER_MOVEMENT_SPEED = 15
+PLAYER_MOVEMENT_SPEED = 7
 GRAVITY = 1
 PLAYER_JUMP_SPEED = 20
 
@@ -33,6 +33,8 @@ PLAYER_START_Y = 225
 
 #levels
 level = 1
+
+
 
 class InstructionView(arcade.View):
     def on_show(self):
@@ -74,6 +76,9 @@ class GameView(arcade.View):
 
     def __init__(self):
 
+        # Background Music
+        arcade.Window.music.play(0.1)
+
         # Call the parent class and set up the window
         super().__init__()
 
@@ -86,12 +91,18 @@ class GameView(arcade.View):
         self.background_list = None
         self.player_list = None
 
+        # Timer for the GAMERS and SPEEDRUNERS lol
+        self.total_time = 0.0
 
         # Separate variable that holds the player sprite
         self.player_sprite = None
 
         # Our physics engine
-        self.physics_engine = None
+        self.physics_engine = arcade.PhysicsEnginePlatformer(
+            player_sprite=self.player_list,
+            platforms=self.wall_list,
+            gravity_constant=GRAVITY,
+        )
 
         # Used to keep track of our scrolling
         self.view_bottom = 0
@@ -106,20 +117,23 @@ class GameView(arcade.View):
 
         # Load sounds
         self.collect_coin_sound = arcade.load_sound(":resources:sounds/coin1.wav")
-        self.jump_sound = arcade.load_sound(":resources:sounds/jump1.wav")
+        self.jump_sound = arcade.load_sound("slime.ogg")
         self.game_over = arcade.load_sound(":resources:sounds/gameover1.wav")
+
 
     def setup(self, level):
         """ Set up the game here. Call this function to restart the game. """
 
         self.background = arcade.load_texture("backgroundold.jpg")
 
+
+
         # Used to keep track of our scrolling
         self.view_bottom = 0
         self.view_left = 0
 
-        # Keep track of the score
-        self.score = 0
+        # More time stuff
+        self.total_time = 0.0
 
         # Create the Sprite lists
         self.player_list = arcade.SpriteList()
@@ -196,10 +210,19 @@ class GameView(arcade.View):
         # Clear the screen to the background color
         arcade.start_render()
 
+        # Calculate minutes
+        minutes = int(self.total_time) // 6
+
+        # Calculate seconds by using a modulus (remainder)
+        seconds = int(self.total_time) % 60
+        # Figure out our output
+        output = f"Time: {minutes:02d}:{seconds:02d}"
+
         # Draw the background texture
         arcade.draw_lrwh_rectangle_textured(self.view_left, self.view_bottom,
         SCREEN_WIDTH, SCREEN_HEIGHT,
         self.background)
+
 
         # Draw our sprites
         self.wall_list.draw()
@@ -209,6 +232,45 @@ class GameView(arcade.View):
         self.player_list.draw()
         self.flags_list.draw()
         self.foreground_list.draw()
+
+
+        # Output the timer text.
+        # First a dark green background for a shadow effect
+        arcade.draw_text(
+            output,
+            start_x=10 + self.view_left,
+            start_y=60 + self.view_bottom,
+            color=arcade.csscolor.DARK_GREEN,
+            font_size=40,
+        )
+        # Now in lime green, slightly shifted
+        arcade.draw_text(
+            output,
+            start_x=15 + self.view_left,
+            start_y=65 + self.view_bottom,
+            color=arcade.csscolor.LIME_GREEN,
+            font_size=40,
+        )
+
+        # Draw the score in the lower left
+        score_text = f"Score: {self.score}"
+
+        # First a dark green background for a shadow effect
+        arcade.draw_text(
+            score_text,
+            start_x=10 + self.view_left,
+            start_y=10 + self.view_bottom,
+            color=arcade.csscolor.DARK_GREEN,
+            font_size=40,
+        )
+        # Now in lime green, slightly shifted
+        arcade.draw_text(
+            score_text,
+            start_x=15 + self.view_left,
+            start_y=15 + self.view_bottom,
+            color=arcade.csscolor.LIME_GREEN,
+            font_size=40,
+        )
 
     def on_key_press(self, key, modifiers):
         """Called whenever a key is pressed. """
@@ -243,6 +305,8 @@ class GameView(arcade.View):
         # Move the player with the physics engine
         self.physics_engine.update()
 
+        # fucking magic or some shit idk
+        self.total_time += delta_time
 
         # See if we hit any coins
         coin_hit_list = arcade.check_for_collision_with_list(self.player_sprite,
@@ -262,7 +326,6 @@ class GameView(arcade.View):
             arcade.play_sound(self.collect_coin_sound)
             # Add one to the score
             self.score += 1
-            print(self.score)
 
         for flags in flags_hit_list:
             flags.remove_from_sprite_lists()
@@ -270,15 +333,8 @@ class GameView(arcade.View):
                 self.level = self.level + 1
                 self.setup(self.level)
             except:
-                #FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX FIX PLEASE
-                response = messagebox.askquestion("Game Over", "Thanks for Playing, Would you like to restart?" )
-                if response == 'yes':
-                    self.level = 1
-                    self.setup(self.level)
-                if response == 'no':
-                    exit()
-                else:
-                    print("Error")
+                print("debuginfo: no more levels, game exiting")
+                exit()
 
             print(self.level)
             if self.level == 3:
@@ -287,7 +343,7 @@ class GameView(arcade.View):
                                                     SCREEN_WIDTH, SCREEN_HEIGHT,
                                                     self.background)
             else:
-                print("your mum")
+                print("debuginfo: level is not a cave")
         # Track if we need to change the viewport
         changed_viewport = False
 
@@ -347,6 +403,7 @@ def main():
     """ Main method """
 
     window = arcade.Window(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
+    arcade.Window.music = arcade.Sound("backgroundmusic.mp3", streaming=True)
     start_view = InstructionView()
     window.show_view(start_view)
     arcade.run()
