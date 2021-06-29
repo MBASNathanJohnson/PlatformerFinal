@@ -2,7 +2,6 @@
 Slime Adventure Game
 """
 import arcade
-from tkinter import messagebox
 
 # Constants
 SCREEN_WIDTH = 1000
@@ -211,7 +210,7 @@ class GameView(arcade.View):
         arcade.start_render()
 
         # Calculate minutes
-        minutes = int(self.total_time) // 6
+        minutes = int(self.total_time) // 60
 
         # Calculate seconds by using a modulus (remainder)
         seconds = int(self.total_time) % 60
