@@ -2,6 +2,8 @@
 Slime Adventure Game
 """
 import arcade
+import arcade.gui
+from random import randint
 
 # Constants
 SCREEN_WIDTH = 1000
@@ -10,13 +12,15 @@ SCREEN_TITLE = "Slime Adventure"
 
 # Constants used to scale our sprites from their original size
 CHARACTER_SCALING = 0.5
+BOTTOM_VIEWPORT_MARGIN = 150
+TOP_VIEWPORT_MARGIN = 100
 TILE_SCALING = 0.5
 COIN_SCALING = 0.5
 SPRITE_PIXEL_SIZE = 128
 GRID_PIXEL_SIZE = (SPRITE_PIXEL_SIZE * TILE_SCALING)
 
 # Movement speed of player, in pixels per frame
-PLAYER_MOVEMENT_SPEED = 7
+PLAYER_MOVEMENT_SPEED = 8
 GRAVITY = 1
 PLAYER_JUMP_SPEED = 20
 
@@ -24,8 +28,6 @@ PLAYER_JUMP_SPEED = 20
 # and the edge of the screen.
 LEFT_VIEWPORT_MARGIN = 200
 RIGHT_VIEWPORT_MARGIN = 200
-BOTTOM_VIEWPORT_MARGIN = 150
-TOP_VIEWPORT_MARGIN = 100
 
 PLAYER_START_X = 64
 PLAYER_START_Y = 225
@@ -47,12 +49,18 @@ class InstructionView(arcade.View):
     def on_draw(self):
         """ Draw this view """
         arcade.start_render()
-        img = arcade.load_texture('background.jpg')
+        img = arcade.load_texture('title.png')
         arcade.draw_lrwh_rectangle_textured(0, 0, 1000, 650, img)
 
         arcade.draw_text("Slime Adventure", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2,
-                         arcade.color.BLACK, font_size=80, anchor_x="center")
-        arcade.draw_text("Click to Play", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 75,
+                         arcade.color.WHITE, font_size=80, anchor_x="center")
+        arcade.draw_text("It's your Grandad's birthday, you must vist him in rural Iraq.", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 30,
+                         arcade.color.WHITE, font_size=15, anchor_x="center")
+        arcade.draw_text("This will involve travelling through hard terrian such as Northen China, Western Afganishtan and South Sudan", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 50,
+                         arcade.color.WHITE, font_size=15, anchor_x="center")
+        arcade.draw_text("Good Luck, and Glory to Arstozka", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 70,
+                         arcade.color.WHITE, font_size=15, anchor_x="center")
+        arcade.draw_text("Click to Play", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 300,
                          arcade.color.WHITE, font_size=20, anchor_x="center")
 
 
@@ -89,6 +97,7 @@ class GameView(arcade.View):
         self.foreground_list = None
         self.background_list = None
         self.player_list = None
+        self.enemy_list = None
 
         # Timer for the GAMERS and SPEEDRUNERS lol
         self.total_time = 0.0
@@ -116,7 +125,12 @@ class GameView(arcade.View):
 
         # Load sounds
         self.collect_coin_sound = arcade.load_sound(":resources:sounds/coin1.wav")
-        self.jump_sound = arcade.load_sound("slime.ogg")
+        self.jump_sound1 = arcade.load_sound("walk1.ogg")
+        self.jump_sound2 = arcade.load_sound("walk2.ogg")
+        self.jump_sound3 = arcade.load_sound("walk3.ogg")
+        self.jump_sound4 = arcade.load_sound("walk4.ogg")
+        self.jump_sound5 = arcade.load_sound("walk5.ogg")
+
         self.game_over = arcade.load_sound(":resources:sounds/gameover1.wav")
 
 
@@ -232,7 +246,6 @@ class GameView(arcade.View):
         self.flags_list.draw()
         self.foreground_list.draw()
 
-
         # Output the timer text.
         # First a dark green background for a shadow effect
         arcade.draw_text(
@@ -315,7 +328,17 @@ class GameView(arcade.View):
 
         if self.physics_engine.can_jump() and self.upheld == True:
             self.player_sprite.change_y = PLAYER_JUMP_SPEED
-            arcade.play_sound(self.jump_sound)
+            randomjumpsound = randint(1,5)
+            if randomjumpsound == 1:
+                arcade.play_sound(self.jump_sound1)
+            elif randomjumpsound == 2:
+                arcade.play_sound(self.jump_sound2)
+            elif randomjumpsound == 3:
+                arcade.play_sound(self.jump_sound3)
+            elif randomjumpsound == 4:
+                arcade.play_sound(self.jump_sound4)
+            elif randomjumpsound == 5:
+                arcade.play_sound(self.jump_sound5)
 
         # Loop through each coin we hit (if any) and remove it
         for coin in coin_hit_list:
@@ -401,7 +424,8 @@ class GameView(arcade.View):
 def main():
     """ Main method """
 
-    window = arcade.Window(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
+    window = arcade.Window(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE, resizable=True)
+    window.set_vsync(True)
     arcade.Window.music = arcade.Sound("backgroundmusic.mp3", streaming=True)
     start_view = InstructionView()
     window.show_view(start_view)
